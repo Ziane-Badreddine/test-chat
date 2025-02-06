@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ message
     const allowedUpdates = ['content', 'media_url', 'seen'];
     const updates = Object.keys(updateData);
 
-    const isValidOperation = updates.every(update => 
+    const isValidOperation = updates.every(update =>
       allowedUpdates.includes(update)
     );
 
@@ -92,12 +92,13 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ message
     }
 
     // 7. Formater la réponse
+    const sender = updatedMessage?.sender?.[0] || null;
+    const receiver = updatedMessage?.receiver?.[0] || null;
+
     const responseData = {
       ...updatedMessage,
-      isSender: updatedMessage.sender.id === currentUser.id,
-      interlocutor: updatedMessage.sender.id === currentUser.id 
-                  ? updatedMessage.receiver 
-                  : updatedMessage.sender
+      isSender: sender?.id === currentUser.id,
+      interlocutor: sender?.id === currentUser.id ? receiver : sender
     };
 
     return NextResponse.json(responseData, { status: 200 });

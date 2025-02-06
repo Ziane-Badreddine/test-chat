@@ -64,18 +64,18 @@ export default function ChatApp() {
             const response = await axios.patch(`/api/messages`, {
                 sender_id: item.id
             });
-          } catch (error) {
+        } catch (error) {
             console.error(error)
-          }
+        }
 
     }
     useEffect(() => {
         if (selectedChat) {
             const interval = setInterval(() => {
                 handleSelect(selectedChat);
-            }, 1000); 
-    
-            return () => clearInterval(interval); 
+            }, 100000);
+
+            return () => clearInterval(interval);
         }
     }, [selectedChat]);
 
@@ -90,7 +90,7 @@ export default function ChatApp() {
         }
     };
 
-    console.log(messages,selectedChat)
+    console.log(messages, selectedChat)
 
 
 
@@ -132,7 +132,7 @@ export default function ChatApp() {
                         <ScrollArea className="h-[70vh]">
                             <div className="flex flex-col items-center justify-center gap-2">
                                 {friends.length > 0 && friendsReqeust !== undefined && friends.map((item, i) => {
-                                    return <UserCard key={i} user={item} status={item.status} isSender={item.isSender} friendReqeust={friendsReqeust.find((value) => value.friend.id === item.id)} selectedChat={selectedChat} setSelectedChat={setSelectedChat}  />
+                                    return <UserCard key={i} user={item} status={item.status} isSender={item.isSender} friendReqeust={friendsReqeust.find((value) => value.friend.id === item.id)} selectedChat={selectedChat} setSelectedChat={setSelectedChat} />
                                 })}
                             </div>
                         </ScrollArea>
@@ -154,7 +154,7 @@ export default function ChatApp() {
 
             {/* Chat Window */}
 
-            {selectedChat !== undefined  && <div className="w-3/4 flex flex-col">
+            {selectedChat !== undefined && <div className="w-3/4 flex flex-col">
                 <div className="p-4 border-b font-semibold text-lg bg-gray-50">{selectedChat?.username}</div>
                 <ScrollArea className="flex-1 p-4 h-[70vh] w-full overflow-y-auto">
                     {messages.filter((msg) => msg.interlocutor.id === selectedChat.id).map((msg, index) => (
@@ -167,7 +167,7 @@ export default function ChatApp() {
                                 <div className="flex items-center justify-end text-xs opacity-80 mt-1">
                                     <span>{getMessageTime(msg.created_at)}</span>
                                     {msg.isSender && msg.seen && (
-                                        <CheckCheck className="text-blue-500 w-4 h-4  ml-1"/> 
+                                        <CheckCheck className="text-blue-500 w-4 h-4  ml-1" />
                                     )}
                                 </div>
                             </div>

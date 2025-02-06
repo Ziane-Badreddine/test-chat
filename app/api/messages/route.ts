@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
         }
 
         // Formatage de la réponse
-        const formattedData = data.map(message => ({
+        const formattedData = data.map(message  => ({
             ...message,
             isSender: message.sender.id === userId,
             interlocutor: message.sender.id === userId

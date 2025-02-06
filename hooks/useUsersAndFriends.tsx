@@ -24,7 +24,7 @@ export interface FriendRequest {
 export const useUsersAndFriends = () => {
     const [users, setUsers] = useState<User[]>([]);
     const [originalUsers, setOriginalUsers] = useState<User[]>([]);
-    const [friends, setFriends] = useState<User[]>([]);
+    const [friends, setFriends] = useState<any[]>([]);
     const [friendsReqeust, setfriendsReqeust] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
