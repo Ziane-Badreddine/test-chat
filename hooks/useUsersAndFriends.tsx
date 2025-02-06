@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { supabase } from "@/lib/supabase";
+import { auth } from "@clerk/nextjs/server";
+import { useUser } from "@clerk/nextjs";
 
 export interface User {
     id: string;
@@ -17,7 +19,7 @@ export interface FriendRequest {
     id: string;
     status: string;
     created_at: Date;
-    isSender: boolean; 
+    isSender: boolean;
     friend: User;
 }
 
@@ -29,13 +31,16 @@ export const useUsersAndFriends = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [messages, setMessages] = useState<any[]>([]);
+    const user = useUser()
 
 
     useEffect(() => {
         const fetchUsersAndFriends = async () => {
+
+            
             setLoading(true);
             try {
-                const [usersRes, friendsRes,messagesRes] = await Promise.all([
+                const [usersRes, friendsRes, messagesRes] = await Promise.all([
                     axios.get("/api/users"),
                     axios.get("/api/friends"),
                     axios.get("/api/messages"),
@@ -44,13 +49,32 @@ export const useUsersAndFriends = () => {
                 if (usersRes.status === 201) {
                     setUsers(usersRes.data);
                     setOriginalUsers(usersRes.data);
-                    setMessages(messagesRes.data);
+                    const formattedData = messagesRes.data.map((message: any)  => ({
+                        ...message,
+                        isSender: message.sender.id === user.user?.id,
+                        interlocutor: message.sender.id === user.user?.id
+                            ? message.receiver
+                            : message.sender
+                    }));
+                    setMessages(formattedData);
                 }
 
                 if (friendsRes.status === 200) {
-                    setfriendsReqeust(friendsRes.data)
-                    setFriends(friendsRes.data.map(({ friend, status,isSender }: { friend: User, status: string,isSender: boolean }) => {
-                        return { isSender,status, ...friend }
+                    // Transform the data
+                    const friendships = friendsRes.data?.map((friendship:any) => ({
+                        id: friendship.id,
+                        status: friendship.status,
+                        created_at: friendship.created_at,
+                        isSender: friendship.sender.id === user.user?.id,
+                        friend: friendship.user.id === user.user?.id
+                            ? friendship.friend
+                            : friendship.user,
+                    })) || [];
+
+                    console.log(friendships,friendsRes.data)
+                    setfriendsReqeust(friendships)
+                    setFriends(friendsRes.data.map(({ friend, status, isSender }: { friend: User, status: string, isSender: boolean }) => {
+                        return { isSender, status, ...friend }
                     }));
                 }
             } catch (err) {
@@ -92,5 +116,5 @@ export const useUsersAndFriends = () => {
         };
     }, []);
 
-    return { users, setUsers, originalUsers, friends,friendsReqeust,messages, loading, error };
+    return { users, setUsers, originalUsers, friends, friendsReqeust, messages, loading, error };
 };

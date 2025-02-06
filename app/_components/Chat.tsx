@@ -90,7 +90,7 @@ export default function ChatApp() {
         }
     };
 
-    console.log(messages, selectedChat)
+
 
 
 

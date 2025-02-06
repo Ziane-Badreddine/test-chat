@@ -100,16 +100,9 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Failed to fetch messages" }, { status: 500 });
         }
 
-        // Formatage de la réponse
-        const formattedData = data.map(message  => ({
-            ...message,
-            isSender: message.sender.id === userId,
-            interlocutor: message.sender.id === userId
-                ? message.receiver
-                : message.sender
-        }));
 
-        return NextResponse.json(formattedData, { status: 200 });
+
+        return NextResponse.json(data, { status: 200 });
 
     } catch (error) {
         console.error("Server error:", error);

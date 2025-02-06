@@ -1,7 +1,12 @@
-import { supabase } from "@/lib/supabase";
-import { auth } from "@clerk/nextjs/server";
-import { NextRequest, NextResponse } from "next/server";
+import { createClient } from '@supabase/supabase-js';
+import { Database } from '@/lib/database.types'; 
+import { auth } from '@clerk/nextjs/server';
+import { NextRequest, NextResponse } from 'next/server';
 
+const supabase = createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 export async function POST(req: NextRequest) {
     // 1. Authenticate user with Clerk
     const { userId: clerkId } = await auth();
@@ -75,60 +80,56 @@ export async function POST(req: NextRequest) {
 
 
 
+
+
+
+
+
 export async function GET(req: NextRequest) {
-    const { userId: clerkId } = await auth();
+  const { userId: clerkId } = await auth();
 
-    if (!clerkId) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!clerkId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    // Get database user ID
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('clerk_id', clerkId)
+      .single();
+
+    if (userError || !userData) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    try {
-        // Get database user ID
-        const { data: userData, error: userError } = await supabase
-            .from("users")
-            .select("id")
-            .eq("clerk_id", clerkId)
-            .single();
+    const userId = userData.id;
 
-        if (!userData) {
-            return NextResponse.json({ error: "User not found" }, { status: 404 });
-        }
+    // Fetch friendships involving the current user
+    const { data, error } = await supabase
+      .from('friends')
+      .select(`
+        id,
+        status,
+        created_at,
+        sender:sender_id(*),
+        user:user_id(*),
+        friend:friend_id(*)
+      `)
+      .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
+      .or(`status.eq."accepted",status.eq."pending"`);
 
-        const userId = userData.id;
-
-        const { data, error } = await supabase
-            .from("friends")
-            .select(`
-                id,
-                status,
-                created_at,
-                sender:sender_id(*),
-                user:user_id(*),
-                friend:friend_id(*)
-            `)
-            .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
-            .or(`status.eq."accepted",status.eq."pending"`)
-
-        if (error) {
-            console.error("Error fetching friends:", error.message);
-            return NextResponse.json({ error: "Failed to fetch friends" }, { status: 500 });
-        }
-
-        const friendships = data.map(friendship => ({
-            id: friendship.id,
-            status: friendship.status,
-            created_at: friendship.created_at,
-            isSender: friendship.sender.id === userData.id ,
-            friend: friendship.user.id === userData.id 
-                   ? friendship.friend 
-                   : friendship.user
-        }));
-
-
-        return NextResponse.json(friendships, { status: 200 });
-
-    } catch (error) {
-        console.error("Server error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    if (error) {
+      console.error("Error fetching friends:", error.message);
+      return NextResponse.json({ error: "Failed to fetch friends" }, { status: 500 });
     }
+
+
+
+    return NextResponse.json(data, { status: 200 });
+  } catch (error) {
+    console.error("Server error:", error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+  }
 }
